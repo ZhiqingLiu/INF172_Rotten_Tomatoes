@@ -1,60 +1,43 @@
-#-----------------------------------------------------------------------------
-# Copyright (c) 2012 - 2023, Anaconda, Inc., and Bokeh Contributors.
-# All rights reserved.
-#
-# The full license is in the file LICENSE.txt, distributed with this software.
-#-----------------------------------------------------------------------------
-''' A small subset of data from the `Open Movie Database`_.
+import pandas as pd
+from sqlalchemy import create_engine
+import mysql.connector
+import ast
 
-License: `CC BY-NC 4.0`_
+# Database credentials and connection details
+username = 'root'  
+password = '12345678'  
+host = 'localhost'  
+port = '3306'  
+database = 'Movie_database'
 
-Sourced from http://www.omdbapi.com
+# Creating a database connection string
+connection_string = f'mysql+mysqlconnector://{username}:{password}@{host}:{port}/{database}'
 
-This modules has an attribute ``movie_path``. This attribute contains the path
-to a SQLite database with the data.
+engine = create_engine(connection_string)
 
-.. bokeh-sampledata-xref:: movies_data
+# Path to the CSV file
+csv_file_path = '/Users/christy/Desktop/movie_dataset.csv'  # change into the own path
+# Read the CSV file
+df = pd.read_csv(csv_file_path)
+# Filter out rows where 'audience_score' is null
+df = df[df['audience_score'].notna()]
+# drop the empty and unnessary column
+df.drop(['critic_score', 'sound_mix', 'rating', 'box_office'], axis=1, inplace=True)
 
-.. _Open Movie Database: http://www.omdbapi.com
-'''
+# Convert the 'audience_score' column from string representation of dictionary to actual dictionary
+df['audience_score'] = df['audience_score'].apply(ast.literal_eval)
 
-#-----------------------------------------------------------------------------
-# Boilerplate
-#-----------------------------------------------------------------------------
-from __future__ import annotations
+# Extract data from the dictionary and create new columns
+df['audience_average_rating'] = df['audience_score'].apply(lambda x: float(x.get('average_rating')))
+df['audience_banded_rating_count'] = df['audience_score'].apply(lambda x: x.get('banded_rating_count'))
+df['audience_liked_count'] = df['audience_score'].apply(lambda x: int(x.get('liked_count')))
+df['audience_not_liked_count'] = df['audience_score'].apply(lambda x: int(x.get('not_liked_count')))
+df['audience_review_count'] = df['audience_score'].apply(lambda x: int(x.get('review_count')))
+df['audience_scores'] = df['audience_score'].apply(lambda x: int(x.get('score')))
+df['audience_sentiment'] = df['audience_score'].apply(lambda x: x.get('sentiment'))
+df.drop('audience_score', axis=1, inplace=True)
 
-import logging # isort:skip
-log = logging.getLogger(__name__)
-
-#-----------------------------------------------------------------------------
-# Imports
-#-----------------------------------------------------------------------------
-
-# Bokeh imports
-from ..util.sampledata import external_path
-
-#-----------------------------------------------------------------------------
-# Globals and constants
-#-----------------------------------------------------------------------------
-
-__all__ = (
-    'movie_path',
-)
-
-#-----------------------------------------------------------------------------
-# General API
-#-----------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------------
-# Dev API
-#-----------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------------
-# Private API
-#-----------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------------
-# Code
-#-----------------------------------------------------------------------------
-
-movie_path = external_path('movies.db')
+# Convert dates
+df['release_date_streaming'] = pd.to_datetime(df['release_date_streaming'], errors='coerce').dt.date
+df.to_sql('movies', con=engine, if_exists='append', index=False, chunksize=500)
+print("Data inserted successfully")
