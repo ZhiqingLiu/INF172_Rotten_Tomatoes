@@ -1,0 +1,27 @@
+CREATE DATABASE IF NOT EXISTS Movie_database;
+USE Movie_database;
+
+CREATE TABLE movies (
+    Full_Title VARCHAR(255) PRIMARY KEY, 
+    title VARCHAR(255),
+    description LONGTEXT,
+    audience_average_rating float,
+    audience_banded_rating_count VARCHAR(255), 
+    audience_liked_count INT, 
+	  audience_not_liked_count INT, 
+	  audience_review_count INT, 
+    audience_scores INT, 
+    audience_sentiment VARCHAR(255), 
+    director LONGTEXT,
+    producer LONGTEXT, 
+    screenwriter LONGTEXT, 
+    distributor LONGTEXT, 
+    production_company LONGTEXT, 
+    genre VARCHAR(100),
+	  original_language  VARCHAR(255), 
+    release_date_theater VARCHAR(255), 
+    release_date_streaming DATE,
+    runtime VARCHAR(100)
+);
+#USE Movie_database;
+#SELECT * FROM movies; 
